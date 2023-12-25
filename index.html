@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Generator</title>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+</head>
+
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+    }
+
+    .container {
+        /* max-width: 600px; */
+        width: 80%;
+        min-width: 350px;
+        margin: 50px auto;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 75vh;
+    }
+
+    h1 {
+        color: #333;
+        text-align: center;
+    }
+
+    #image-container {
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: center;
+    }
+
+    #chat-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        /* height: 70vh; */
+    }
+
+    #chat {
+        max-width: 80%;
+        overflow: hidden;
+    }
+
+    .message {
+        background-color: #e0f7fa;
+        padding: 10px;
+        margin: 10px;
+        border-radius: 8px;
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    .form-container {
+        text-align: center;
+        /* margin-top: 10px; */
+        margin: 10px;
+        display: flex;
+        justify-content: space-around;
+        width: 100%;
+    }
+
+    input {
+        padding: 10px;
+        font-size: 16px;
+        width: 80%;
+        margin-right: 10px;
+        box-sizing: border-box;
+        border-radius: 5px;
+    }
+    
+    @media screen and (max-width:1280px){
+        .form-container
+        {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        button{
+            margin-top: 15px;
+        }
+    }
+
+    button {
+        padding: 10px 20px;
+        font-size: 16px;
+        background: linear-gradient(90deg, #f4a742, #f97e4f, #f42c84, #8a2be2);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+        font-weight: bolder;
+    }
+
+    button:hover {
+        background-color: #45a049;
+    }
+
+    .loading-message {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    #generatedImage {
+        /* max-width: 100%; */
+        max-width: 512px;
+        min-width: 250px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    
+</style>
+<body>
+    <div class="container">
+        <h1>Image Generator</h1>
+
+        <div id="image-container" class="loading-message"></div>
+
+        <div id="chat-container">
+            <div id="chat">
+                <div class="message">
+                    <p id="chatMessage">Hello! Describe an image.</p>
+                </div>
+            </div>
+
+            <div class="form-container">
+                <input type="text" id="prompt" placeholder="Enter your prompt here..." required>
+                <button id="generateBtn">Generate Image</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const apiEndpoint = "https://api-inference.huggingface.co/models/playgroundai/playground-v2-1024px-aesthetic";
+
+        function generateImage(prompt) {
+            const imageContainer = document.getElementById("image-container");
+            const chatMessage = document.getElementById("chatMessage");
+
+            if (!prompt) {
+                // Show error message if prompt is empty
+                chatMessage.innerText = "Please enter a prompt";
+                return;
+            }
+
+            // Display "Generating..." message in the text box
+            chatMessage.innerText = "Generating...";
+
+            const headers = {
+                "Authorization": "Bearer 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",
+                "Content-Type": "application/json",
+            };
+
+            const data = {
+                "inputs": prompt,
+                "max_iterations": 100,
+                "timestep_respacing": "1.0",
+                "random_seed": 0,
+            };
+
+            $.ajax({
+                url: apiEndpoint,
+                headers: headers,
+                type: "POST",
+                data: JSON.stringify(data),
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                success: function (response) {
+                    const imageUrl = URL.createObjectURL(response);
+
+                    // Create an image element
+                    const imageElement = new Image();
+                    imageElement.src = imageUrl;
+                    imageElement.id = "generatedImage";
+
+                    // Wait for the image to load before displaying it
+                    imageElement.onload = function () {
+                        // Clear the loading message and show the generated image
+                        imageContainer.innerHTML = "";
+                        imageContainer.appendChild(imageElement);
+
+                        // Change the message to "This is your generated image"
+                        chatMessage.innerText = "This is your generated image";
+                        console.log("Image generated successfully!");
+                    };
+                },
+            });
+        }
+
+        document.getElementById("prompt").addEventListener("keypress", function (event) {
+            // Check if the pressed key is Enter (key code 13)
+            if (event.key === "Enter") {
+                // Prevent the default form submission behavior
+                event.preventDefault();
+
+                // Get the prompt from the input field
+                const prompt = document.getElementById("prompt").value;
+
+                // Call the function to generate the image
+                generateImage(prompt);
+            }
+        });
+
+        document.getElementById("generateBtn").addEventListener("click", function () {
+            // Get the prompt from the input field
+            const prompt = document.getElementById("prompt").value;
+
+            // Call the function to generate the image
+            generateImage(prompt);
+        });
+    </script>
+</body>
+</html>
